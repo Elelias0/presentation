@@ -1,9 +1,4 @@
 <!DOCTYPE HTML>
-<!--
-	Aerial by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
--->
 <html lang="en">
 	<head>
 		<title>Elias Castellanos</title>
@@ -40,14 +35,29 @@
 
 			</div>
 		</div>
-		<div id="chat-container">
-    		<div id="chat-header">Talk with my digital twin</div>
-    		<div id="chat-box"></div>
-    		<div id="chat-input-area">
-        		<input type="text" id="user-input" placeholder="Ask about my experience...">
-        		<button onclick="sendMessage()">Send</button>
-    		</div>
-		</div>
+		<div id="chat-widget" class="minimized">
+    <button id="chat-toggle" aria-label="Abrir o cerrar chat">
+        💬
+    </button>
+	<div id="chat-teaser">
+    👋 Hi! Ask me about Elias' experience
+	</div>
+    <div id="chat-container">
+        <div id="chat-header">
+            <span>Talk with my digital twin</span>
+            <button id="chat-minimize" aria-label="Hide chat">—</button>
+        </div>
+
+        <div id="chat-box">
+            <div class="msg bot">Hi, I’m Elias' digital twin. Ask me about experience, projects or skills.</div>
+        </div>
+
+        <div id="chat-input-area">
+            <input type="text" id="user-input" placeholder="Ask me something..." />
+            <button id="send-btn" type="button">Send</button>
+        </div>
+    </div>
+</div>
 		<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 		<script>
 			window.onload = function() { document.body.classList.remove('is-preload'); }
