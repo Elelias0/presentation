@@ -2,6 +2,10 @@ from flask import Flask,render_template, request, jsonify
 from google import genai
 import os
 from google.genai import types
+from dotenv import load_dotenv
+
+# Carga las variables del archivo .env que Render pondrá en la raíz
+load_dotenv("/etc/secrets/.env")
 
 #https://dashboard.render.com/web/srv-d72lblruibrs73bdq7s0/deploys/dep-d72lbmruibrs73bdq81g?r=2026-03-26%4015%3A49%3A51%7E2026-03-26%4015%3A54%3A00
 app = Flask(__name__)
