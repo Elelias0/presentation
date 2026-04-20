@@ -71,8 +71,8 @@ def chat():
         return jsonify({"respuesta": response.text})
 
     except Exception as e:
-        print(f"Error técnico: {e}")
-        return jsonify({"respuesta": "Error de comunicación en Shibuya. Inténtalo de nuevo."}), 500
+        #print(f"Error técnico: {e}")
+        return jsonify({"respuesta": "Error. Disconnected from server. Try Again!."}), 500
 
 
 if __name__ == '__main__':
