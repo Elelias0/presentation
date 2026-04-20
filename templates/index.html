@@ -24,10 +24,10 @@
 						<p>Mainframe Developer &nbsp;&bull;&nbsp; Python &nbsp;&bull;&nbsp; Learning enthusiast</p>
 						<nav>
 							<ul>
-								<li><a href="https://www.linkedin.com/in/elias-jacob-castellanos-velazquez" class="icon brands fa-linkedin" target="_blank" rel="noopener noreferrer"><span class="label">LinkedIn</span></a></li>
+								<li><a href="https://www.linkedin.com/in/elias-jacob-castellanos-velazquez" target="_blank" rel="noopener noreferrer" class="icon brands fa-linkedin"><span class="label">LinkedIn</span></a></li>
 								<li><a href="https://www.instagram.com/elias_casvel/" class="icon brands fa-instagram" target="_blank" rel="noopener noreferrer"><span class="label">Instagram</span></a></li>
 								<li><a href="http://github.com/Elelias0" class="icon brands fa-github" target="_blank" rel="noopener noreferrer"><span class="label">Github</span></a></li>
-								<li><a href="mailto:elias.casvel@gmail.com" class="icon solid fa-envelope" target="_blank" rel="noopener noreferrer"><span class="label">Email</span></a></li>
+								<li><a href="mailto:elias.casvel@gmail.com" class="icon solid fa-envelope" target="_blank" rel="noopener noreferrer"><span class="label" >Email</span></a></li>
 								<li><a href="https://elias-blog.onrender.com/" class="icon solid fa-newspaper" target="_blank" rel="noopener noreferrer"><span class="label" >Blog</span></a></li>
 							</ul>
 						</nav>
@@ -40,6 +40,15 @@
 
 			</div>
 		</div>
+		<div id="chat-container">
+    		<div id="chat-header">Talk with my digital twin"</div>
+    		<div id="chat-box"></div>
+    		<div id="chat-input-area">
+        		<input type="text" id="user-input" placeholder="Ask about my experience...">
+        		<button onclick="sendMessage()">Send</button>
+    		</div>
+		</div>
+		<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 		<script>
 			window.onload = function() { document.body.classList.remove('is-preload'); }
 			window.ontouchmove = function() { return false; }
