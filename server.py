@@ -11,7 +11,7 @@ load_dotenv("/etc/secrets/.env")
 app = Flask(__name__)
 
 client = genai.Client(
-    api_key=os.getenv('API_KEY'),
+    api_key=os.environ.get('API_KEY'),
     http_options={'api_version': 'v1beta'}
 )
 
