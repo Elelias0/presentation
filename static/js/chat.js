@@ -9,7 +9,6 @@ function appendMessage(text, type) {
 }
 
 function showInterviewForm(afterElement) {
-    // Evita mostrar el formulario más de una vez
     if (document.querySelector('.interview-form')) {
         return;
     }
@@ -18,30 +17,57 @@ function showInterviewForm(afterElement) {
     formDiv.className = 'bot-message interview-form';
 
     formDiv.innerHTML = `
-        <input id="interview-name" placeholder="Name" />
-        <input id="interview-company" placeholder="Company" />
-        <input id="interview-email" placeholder="Email" />
-        <input id="interview-position" placeholder="Position" />
-        <textarea id="interview-message" placeholder="Message / possible interview time"></textarea>
-        <button type="button" onclick="sendInterviewRequest()">Send interview request</button>
+        <div class="interview-form-title">Interview request</div>
+
+        <input class="interview-input" id="interview-name" placeholder="Name" autocomplete="name" />
+        <input class="interview-input" id="interview-company" placeholder="Company" autocomplete="organization" />
+        <input class="interview-input" id="interview-email" placeholder="Email" autocomplete="email" />
+        <input class="interview-input" id="interview-position" placeholder="Position / Opportunity" />
+
+        <textarea 
+            class="interview-textarea" 
+            id="interview-message" 
+            placeholder="Message / possible interview time"
+            spellcheck="false"
+        ></textarea>
+
+        <button class="interview-submit-btn" type="button" onclick="sendInterviewRequest(event)">
+            Send interview request
+        </button>
+
+        <p class="interview-error" id="interview-error"></p>
     `;
 
     afterElement.insertAdjacentElement('afterend', formDiv);
 
-    const chatContainer = afterElement.parentElement;
-    if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+    const parent = afterElement.parentElement;
+    if (parent) {
+        parent.scrollTop = parent.scrollHeight;
     }
 }
 
-async function sendInterviewRequest() {
+async function sendInterviewRequest(event) {
+    const button = event.target;
+    const form = button.closest('.interview-form');
+    const errorBox = document.getElementById('interview-error');
+
     const name = document.getElementById('interview-name').value.trim();
     const company = document.getElementById('interview-company').value.trim();
     const email = document.getElementById('interview-email').value.trim();
     const position = document.getElementById('interview-position').value.trim();
     const message = document.getElementById('interview-message').value.trim();
 
+    errorBox.textContent = '';
+
+    if (!name || !company || !email || !message) {
+        errorBox.textContent = 'Please fill in name, company, email and message.';
+        return;
+    }
+
     try {
+        button.disabled = true;
+        button.textContent = 'Sending...';
+
         const response = await fetch('/interview-request', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -60,11 +86,23 @@ async function sendInterviewRequest() {
             throw new Error(data.message || 'Could not send interview request.');
         }
 
-        alert(data.message || 'Interview request sent successfully.');
+        form.innerHTML = `
+            <div class="interview-success">
+                Thank you. Your interview request was sent successfully.
+            </div>
+        `;
+
+        setTimeout(() => {
+            form.remove();
+        }, 2500);
 
     } catch (error) {
         console.error('Interview request error:', error);
-        alert('Could not send the interview request. Please try again.');
+
+        button.disabled = false;
+        button.textContent = 'Send interview request';
+
+        errorBox.textContent = 'Could not send the interview request. Please try again.';
     }
 }
 
