@@ -76,6 +76,23 @@ def generate_ai_response(user_msg):
         "Please try again in a few moments."
     )
 
+def is_interview_intent(message):
+    message = message.lower()
+
+    keywords = [
+        "entrevista",
+        "interview",
+        "面接",
+        "面談",
+        "recruiter",
+        "reclutador",
+        "llamada",
+        "call",
+        "meeting",
+        "reunión"
+    ]
+
+    return any(keyword in message for keyword in keywords)
 
 
 instrucciones_sistema = """
@@ -257,15 +274,19 @@ def chat():
 
         respuesta = generate_ai_response(user_msg)
 
-        return jsonify({"respuesta": respuesta})
+        action = None
+        if is_interview_intent(user_msg):
+            action = "show_interview_form"
+
+        return jsonify({
+            "respuesta": respuesta,
+            "action": action
+        })
 
     except Exception as e:
         print(f"Error técnico en /chat: {type(e).__name__}: {e}", flush=True)
         return jsonify({
-            "respuesta": (
-                "Sorry, I could not process your message right now. "
-                "Please try again later."
-            )
+            "respuesta": "Sorry, I could not process your message right now. Please try again later."
         }), 500
 
 
