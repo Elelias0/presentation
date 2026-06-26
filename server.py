@@ -84,12 +84,16 @@ def is_interview_intent(message):
         "interview",
         "面接",
         "面談",
-        "recruiter",
-        "reclutador",
         "llamada",
         "call",
         "meeting",
-        "reunión"
+        "reunión",
+        "contacto",
+        "tu numero",
+        "tu telefono",
+        "contact",
+        "電話番号",
+        "連絡"
     ]
 
     return any(keyword in message for keyword in keywords)
