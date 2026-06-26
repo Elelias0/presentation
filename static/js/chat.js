@@ -8,14 +8,11 @@ function appendMessage(text, type) {
     return div;
 }
 
-function showInterviewForm() {
-    // Evita mostrar el formulario muchas veces
+function showInterviewForm(afterElement) {
+    // Evita mostrar el formulario más de una vez
     if (document.querySelector('.interview-form')) {
         return;
     }
-
-    const chatBox = document.querySelector('.chat-messages'); 
-    // Cambia ".chat-messages" por el nombre real del contenedor de tus mensajes
 
     const formDiv = document.createElement('div');
     formDiv.className = 'bot-message interview-form';
@@ -29,8 +26,12 @@ function showInterviewForm() {
         <button type="button" onclick="sendInterviewRequest()">Send interview request</button>
     `;
 
-    chatBox.appendChild(formDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    afterElement.insertAdjacentElement('afterend', formDiv);
+
+    const chatContainer = afterElement.parentElement;
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
 }
 
 async function sendInterviewRequest() {
@@ -114,7 +115,7 @@ async function sendMessage() {
         const data = await response.json();
         loadingDiv.textContent = data.respuesta || 'No se recibió respuesta.';
         if (data.action === "show_interview_form") {
-            showInterviewForm();
+            showInterviewForm(loadingDiv);
         }
     } catch (error) {
         console.error('Error técnico:', error);
