@@ -94,7 +94,7 @@ async function sendInterviewRequest(event) {
 
         setTimeout(() => {
             form.remove();
-        }, 2500);
+        }, 25000);
 
     } catch (error) {
         console.error('Interview request error:', error);
