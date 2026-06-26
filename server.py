@@ -1,13 +1,14 @@
 from flask import Flask,render_template, request, jsonify
 from google import genai
 import os
+import requests
+import re
 from google.genai import types
 from dotenv import load_dotenv
 
 # Carga las variables del archivo .env que Render pondrá en la raíz
 load_dotenv("/etc/secrets/.env")
 
-#https://dashboard.render.com/web/srv-d72lblruibrs73bdq7s0/deploys/dep-d72lbmruibrs73bdq81g?r=2026-03-26%4015%3A49%3A51%7E2026-03-26%4015%3A54%3A00
 app = Flask(__name__)
 
 client = genai.Client(
@@ -15,10 +16,14 @@ client = genai.Client(
     http_options={'api_version': 'v1beta'}
 )
 
-# print("Lista de modelos disponibles para tu cuenta:")
+# print("Lista de modelos disponibles para mi:")
 # for m in client.models.list():
 #     if "flash" in m.name:
-#         print(f"-> Usa este nombre exacto: {m.name}")
+#         print(f"-> modelo: {m.name}")
+
+def is_valid_email(email):
+    pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+    return re.match(pattern, email) is not None
 
 
 instrucciones_sistema = """
@@ -37,18 +42,24 @@ IDENTIDAD
 - Educación: Ingeniería Electrónica, con enfoque en microcontroladores, Arduino y programación en C
 
 EXPERIENCIA PRINCIPAL
-- Más de 8 años de experiencia en Mainframe
-- Tecnologías principales: COBOL, JCL, DB2
-- Experiencia en desarrollo, mantenimiento, soporte y mejora de sistemas empresariales
-- Perfil orientado a calidad, estabilidad, resolución de incidentes y pensamiento preventivo
+- Más de 8 años de experiencia en desarrollo, mantenimiento y soporte de sistemas Mainframe para entornos empresariales y bancarios.
+- Experiencia sólida con COBOL, JCL, DB2, CICS, VSAM, Easytrieve y Control-M, participando en procesos batch, análisis de datos, validaciones, pruebas y resolución de incidentes.
+- Experiencia en desarrollo de nuevas funcionalidades, mantenimiento correctivo/evolutivo, análisis de causa raíz, optimización de procesos y soporte productivo.
+- Perfil orientado a calidad, estabilidad operativa, prevención de errores, documentación técnica y resolución rápida de incidentes.
+- Capacidad para trabajar con sistemas críticos, procesos de alto impacto y equipos multidisciplinarios bajo metodologías ágiles como Scrum/Kanban.
 
 HABILIDADES COMPLEMENTARIAS
-- Python para automatización y desarrollo práctico
-- Tecnologías y librerías: Flask, Pandas, BeautifulSoup, Google GenAI
-- Experiencia en despliegue de páginas web, automatización de procesos e integración con APIs
-- Desarrollo de proyectos personales y funcionales
+- Desarrollo backend: Python, FastAPI, Flask, SQLAlchemy 2.0 async, Alembic, PostgreSQL 16, REST APIs, JWT Authentication, HttpOnly Cookies, Google OAuth 2.0.
+- Desarrollo frontend: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Zustand, PWA, Service Workers, IndexedDB y sincronización offline.
+- Inteligencia Artificial generativa: Google GenAI SDK, Gemini 2.5 Flash, LLMs, generación de conversaciones, tests, ejercicios de lectura, sentence mining con IA y procesamiento de japonés.
+- Audio, TTS e imágenes: Google Cloud Text-to-Speech WaveNet, pydub, ffmpeg, Pillow, generación y manejo de audio MP3 e imágenes para contenido educativo.
+- Cloud, storage y despliegue: Railway, Vercel, Cloudflare R2, Docker, PostgreSQL en entorno local y producción, configuración de dominios con Namecheap.
+- Monetización e integraciones: Stripe Checkout, Stripe Customer Portal, webhooks, Brevo para emails, Web Push Notifications con VAPID, Redis y rate limiting con SlowAPI.
+- Automatización y scraping: Python, Pandas, BeautifulSoup, integración con APIs externas y automatización de procesos.
+- Proyecto personal destacado: Desarrollo de Kitsune Study, una plataforma web para estudio de japonés/JLPT con FastAPI, React, TypeScript, PostgreSQL, IA generativa, TTS, PWA offline, notificaciones push, Stripe y despliegue en producción.
 
 LOGROS Y PROYECTOS
+- Proyecto personal: https://www.kitsune.study
 - Sistema de monitoreo de precios de boletos de avión con notificaciones automáticas
 - Blog con login y registro de usuarios
 - Implementación de IA en proyectos reales
@@ -61,6 +72,32 @@ PERSONALIDAD PROFESIONAL
 - Amable
 - Resolutivo
 - Con mentalidad de aprendizaje continuo
+
+ENTREVISTAS Y CONTACTO PROFESIONAL
+
+Si un recruiter, empresa o entrevistador muestra interés en una entrevista, reunión, llamada o proceso de selección:
+
+- Agradece el interés de forma profesional.
+- Indica que estoy abierto a conversar sobre oportunidades relacionadas con mi perfil.
+- Pide amablemente los siguientes datos:
+  - nombre
+  - empresa
+  - correo electrónico
+  - posición o tipo de oportunidad
+  - zona horaria
+- No confirmes una entrevista automáticamente.
+- No prometas disponibilidad en horarios específicos.
+- No inventes calendario ni disponibilidad.
+- Indica que revisaré la información y responderé directamente.
+
+Ejemplo en español:
+"Muchas gracias por su interés. Con gusto puedo conversar sobre oportunidades relacionadas con mi perfil profesional. Por favor compártame su nombre, empresa, correo electrónico, posición y horarios tentativos, y me pondré en contacto directamente."
+
+Ejemplo en inglés:
+"Thank you very much for your interest. I would be happy to discuss opportunities related to my professional background. Please share your name, company, email address, position details and possible interview times, and I will follow up directly."
+
+Ejemplo en japonés:
+"ご興味をお持ちいただき、ありがとうございます。私の職務経歴に関連する機会について、ぜひお話しできればと思います。お名前、会社名、メールアドレス、ポジションの詳細、面談候補日時を共有いただければ、後ほど直接ご連絡いたします。"
 
 ALCANCE
 Responde únicamente preguntas relacionadas con:
@@ -160,32 +197,124 @@ def home():
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        user_msg = request.json.get('mensaje')
+        data = request.get_json(silent=True) or {}
+        user_msg = data.get('mensaje', '').strip()
 
-        # Usamos el nombre exacto que devolvió tu script de diagnóstico
+        if not user_msg:
+            return jsonify({"respuesta": "Please enter a message."}), 400
+
         chat_session = client.chats.create(
-            model="gemini-flash-latest", # Este es el más balanceado de tu lista
+            model="gemini-flash-latest",
             config=types.GenerateContentConfig(
-                temperature=0.7
-            ),
-            history=[
-                {
-                    "role": "user",
-                    "parts": [{"text": f"Instrucción de sistema: {instrucciones_sistema}. Entendido?"}]
-                },
-                {
-                    "role": "model",
-                    "parts": [{"text": "Entendido. Soy el gemelo digital de Elias Castellanos. ¿En qué puedo ayudarte?"}]
-                }
-            ]
+                temperature=0.7,
+                system_instruction=instrucciones_sistema
+            )
         )
 
         response = chat_session.send_message(user_msg)
+
         return jsonify({"respuesta": response.text})
 
     except Exception as e:
-        #print(f"Error técnico: {e}")
-        return jsonify({"respuesta": "Error. Disconnected from server. Try Again!."}), 500
+        print(f"Error técnico: {e}")
+        return jsonify({"respuesta": "Error. Disconnected from server. Try again!"}), 500
+
+
+@app.route('/interview-request', methods=['POST'])
+def interview_request():
+    try:
+        data = request.get_json(silent=True) or {}
+
+        name = data.get('name', '').strip()
+        company = data.get('company', '').strip()
+        email = data.get('email', '').strip()
+        position = data.get('position', '').strip()
+        message = data.get('message', '').strip()
+
+        if not name or not company or not email or not message:
+            return jsonify({
+                "ok": False,
+                "message": "Name, company, email and message are required."
+            }), 400
+
+        if not is_valid_email(email):
+            return jsonify({
+                "ok": False,
+                "message": "Invalid email address."
+            }), 400
+
+        brevo_api_key = os.environ.get("BREVO_API_KEY")
+        contact_email = os.environ.get("CONTACT_EMAIL")
+        sender_email = os.environ.get("SENDER_EMAIL")
+
+        if not brevo_api_key or not contact_email or not sender_email:
+            return jsonify({
+                "ok": False,
+                "message": "Contact service is not configured."
+            }), 500
+
+        subject = f"Interview request from {name} - {company}"
+
+        html_content = f"""
+        <h2>New interview request</h2>
+        <p><strong>Name:</strong> {name}</p>
+        <p><strong>Company:</strong> {company}</p>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Position:</strong> {position}</p>
+        <p><strong>Message:</strong></p>
+        <p>{message}</p>
+        """
+
+        payload = {
+            "sender": {
+                "name": "Elias Castellanos Portfolio",
+                "email": sender_email
+            },
+            "to": [
+                {
+                    "email": contact_email,
+                    "name": "Elias Castellanos"
+                }
+            ],
+            "replyTo": {
+                "email": email,
+                "name": name
+            },
+            "subject": subject,
+            "htmlContent": html_content
+        }
+
+        headers = {
+            "accept": "application/json",
+            "api-key": brevo_api_key,
+            "content-type": "application/json"
+        }
+
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            json=payload,
+            headers=headers,
+            timeout=10
+        )
+
+        if response.status_code >= 400:
+            print("Brevo error:", response.status_code, response.text)
+            return jsonify({
+                "ok": False,
+                "message": "Could not send the interview request."
+            }), 500
+
+        return jsonify({
+            "ok": True,
+            "message": "Thank you. Your interview request was sent successfully."
+        })
+
+    except Exception as e:
+        print(f"Interview request error: {e}")
+        return jsonify({
+            "ok": False,
+            "message": "Server error. Please try again."
+        }), 500
 
 
 if __name__ == '__main__':
