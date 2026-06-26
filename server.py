@@ -11,6 +11,9 @@ load_dotenv("/etc/secrets/.env")
 
 app = Flask(__name__)
 
+PRIMARY_MODEL = "gemini-2.5-flash"
+FALLBACK_MODEL = "gemini-2.5-flash-lite"
+
 client = genai.Client(
     api_key=os.environ.get('API_KEY'),
     http_options={'api_version': 'v1beta'}
@@ -24,6 +27,55 @@ client = genai.Client(
 def is_valid_email(email):
     pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
     return re.match(pattern, email) is not None
+
+def generate_ai_response(user_msg):
+    models = [PRIMARY_MODEL, FALLBACK_MODEL]
+
+    last_error = None
+
+    for model in models:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=user_msg,
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        system_instruction=instrucciones_sistema,
+                        max_output_tokens=500
+                    )
+                )
+
+                if response.text:
+                    return response.text
+
+                last_error = "Empty response from model"
+
+            except Exception as e:
+                last_error = e
+                error_text = str(e)
+
+                # Errores temporales: reintentar
+                if "503" in error_text or "UNAVAILABLE" in error_text or "429" in error_text:
+                    wait_time = 2 ** attempt
+                    print(
+                        f"Temporary Gemini error with {model}. "
+                        f"Attempt {attempt + 1}/3. Retrying in {wait_time}s. Error: {e}",
+                        flush=True
+                    )
+                    time.sleep(wait_time)
+                    continue
+
+                # Si es otro error, no tiene caso reintentar
+                raise e
+
+    print(f"Gemini failed after retries. Last error: {last_error}", flush=True)
+
+    return (
+        "Sorry, I am experiencing temporary high demand right now. "
+        "Please try again in a few moments."
+    )
+
 
 
 instrucciones_sistema = """
@@ -203,21 +255,18 @@ def chat():
         if not user_msg:
             return jsonify({"respuesta": "Please enter a message."}), 400
 
-        chat_session = client.chats.create(
-            model="gemini-flash-latest",
-            config=types.GenerateContentConfig(
-                temperature=0.7,
-                system_instruction=instrucciones_sistema
-            )
-        )
+        respuesta = generate_ai_response(user_msg)
 
-        response = chat_session.send_message(user_msg)
-
-        return jsonify({"respuesta": response.text})
+        return jsonify({"respuesta": respuesta})
 
     except Exception as e:
-        print(f"Error técnico: {e}")
-        return jsonify({"respuesta": "Error. Disconnected from server. Try again!"}), 500
+        print(f"Error técnico en /chat: {type(e).__name__}: {e}", flush=True)
+        return jsonify({
+            "respuesta": (
+                "Sorry, I could not process your message right now. "
+                "Please try again later."
+            )
+        }), 500
 
 
 @app.route('/interview-request', methods=['POST'])
