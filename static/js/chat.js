@@ -8,6 +8,65 @@ function appendMessage(text, type) {
     return div;
 }
 
+function showInterviewForm() {
+    // Evita mostrar el formulario muchas veces
+    if (document.querySelector('.interview-form')) {
+        return;
+    }
+
+    const chatBox = document.querySelector('.chat-messages'); 
+    // Cambia ".chat-messages" por el nombre real del contenedor de tus mensajes
+
+    const formDiv = document.createElement('div');
+    formDiv.className = 'bot-message interview-form';
+
+    formDiv.innerHTML = `
+        <input id="interview-name" placeholder="Name" />
+        <input id="interview-company" placeholder="Company" />
+        <input id="interview-email" placeholder="Email" />
+        <input id="interview-position" placeholder="Position" />
+        <textarea id="interview-message" placeholder="Message / possible interview time"></textarea>
+        <button type="button" onclick="sendInterviewRequest()">Send interview request</button>
+    `;
+
+    chatBox.appendChild(formDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendInterviewRequest() {
+    const name = document.getElementById('interview-name').value.trim();
+    const company = document.getElementById('interview-company').value.trim();
+    const email = document.getElementById('interview-email').value.trim();
+    const position = document.getElementById('interview-position').value.trim();
+    const message = document.getElementById('interview-message').value.trim();
+
+    try {
+        const response = await fetch('/interview-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                company,
+                email,
+                position,
+                message
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Could not send interview request.');
+        }
+
+        alert(data.message || 'Interview request sent successfully.');
+
+    } catch (error) {
+        console.error('Interview request error:', error);
+        alert('Could not send the interview request. Please try again.');
+    }
+}
+
 function toggleChat(forceOpen = null) {
     const widget = document.getElementById('chat-widget');
     const shouldOpen = forceOpen !== null
@@ -54,6 +113,9 @@ async function sendMessage() {
 
         const data = await response.json();
         loadingDiv.textContent = data.respuesta || 'No se recibió respuesta.';
+        if (data.action === "show_interview_form") {
+            showInterviewForm();
+        }
     } catch (error) {
         console.error('Error técnico:', error);
         loadingDiv.textContent = 'Sorry, I was disconnected. Try again in 10 seconds.';
@@ -120,7 +182,6 @@ if (!localStorage.getItem('chatOpened')) {
         }
     }, 3000);
 }
-
 // Hide teaser
 function hideTeaser() {
     if (teaser) {
